@@ -236,7 +236,7 @@ async function doInstall(api, threadID, id, forceKind = null) {
   } else api.sendMessage(msg, threadID);
 }
 
-async function sendListPage(api, threadID, type, page, limit = 10) {
+async function sendListPage(api, threadID, senderID, type, page, limit = 10) {
   const offset = (page - 1) * limit;
   try {
     const res = await axios.get(`${API_BASE}/miraistore/list?limit=${limit}&offset=${offset}&type=${type}`);
@@ -261,12 +261,12 @@ async function sendListPage(api, threadID, type, page, limit = 10) {
     if (totalPages > 1)
       global.GoatBot.onReply.set(sent.messageID, {
         name: module.exports.config.name, messageID: sent.messageID,
-        listType: type, page, totalPages, limit, mode: "list"
+        listType: type, page, totalPages, limit, mode: "list", senderID
       });
   } catch (_) { api.sendMessage("❌ List API error.", threadID); }
 }
 
-async function sendSearchPage(api, threadID, query, page, limit = 5) {
+async function sendSearchPage(api, threadID, senderID, query, page, limit = 5) {
   const offset = (page - 1) * limit;
   try {
     const [cr, er] = await Promise.all([
@@ -288,11 +288,11 @@ async function sendSearchPage(api, threadID, query, page, limit = 5) {
       msg += `╰────────────◊\n`;
       msg += ` ✰ Upload : ${new Date(cmd.uploadDate || Date.now()).toDateString()}\n\n`;
     });
-    if (totalPages > 1) msg += `Page ${page}/${totalPages}\nReply "page <number>" or react ➡️ to go next.`;
+    if (totalPages > 1) msg += `Page ${page}/${totalPages}\nReact to go next page.`;
 
     const sent = await api.sendMessage(msg.trim(), threadID);
     if (totalPages > 1) {
-      const h = { name: module.exports.config.name, messageID: sent.messageID, query, page, totalPages, limit, mode: "search" };
+      const h = { name: module.exports.config.name, messageID: sent.messageID, query, page, totalPages, limit, mode: "search", senderID };
       global.GoatBot.onReply.set(sent.messageID, h);
       global.GoatBot.onReaction.set(sent.messageID, h);
     }
@@ -353,7 +353,7 @@ module.exports = {
   config: {
     name: "goatstore",
     aliases: ["gs", "cmdstore", "commandstore"],
-    version: "2.0.0",
+    version: "3.0.0",
     author: "rX & EryXenX",
     countDown: 3,
     role: 2,
@@ -391,26 +391,27 @@ module.exports = {
   },
 
   onReply: async function ({ api, event, Reply }) {
-    const { threadID, body } = event;
-    const { mode, query, listType, page, totalPages, limit } = Reply;
+    const { threadID, body, senderID } = event;
+    const { mode, query, listType, page, totalPages, limit, senderID: origSender } = Reply;
+    if (senderID !== origSender) return;
     const match = body.match(/^page (\d+)$/i);
     if (!match) return;
     const newPage = parseInt(match[1]);
     if (newPage < 1 || newPage > totalPages)
       return api.sendMessage(`❌ Page must be between 1 and ${totalPages}.`, threadID);
     api.unsendMessage(Reply.messageID).catch(() => {});
-    if (mode === "list") await sendListPage(api, threadID, listType, newPage, limit);
-    else await sendSearchPage(api, threadID, query, newPage, limit);
+    if (mode === "list") await sendListPage(api, threadID, senderID, listType, newPage, limit);
+    else await sendSearchPage(api, threadID, senderID, query, newPage, limit);
   },
 
   onReaction: async function ({ api, event, Reaction }) {
-    if (event.reaction !== "➡️") return;
-    const { threadID } = event;
-    const { mode, query, listType, page, totalPages, limit } = Reaction;
+    const { threadID, userID } = event;
+    const { mode, query, listType, page, totalPages, limit, senderID } = Reaction;
+    if (userID !== senderID) return;
     if (page >= totalPages) return api.sendMessage("✅ Already on the last page.", threadID);
     api.unsendMessage(Reaction.messageID).catch(() => {});
-    if (mode === "list") await sendListPage(api, threadID, listType, page + 1, limit);
-    else await sendSearchPage(api, threadID, query, page + 1, limit);
+    if (mode === "list") await sendListPage(api, threadID, senderID, listType, page + 1, limit);
+    else await sendSearchPage(api, threadID, senderID, query, page + 1, limit);
   },
 
   onStart: async function ({ api, event, args }) {
@@ -498,7 +499,7 @@ module.exports = {
     if (sub === "list" || sub === "ls") {
       const isEvent = args[1]?.toLowerCase() === "event";
       const page = Math.max(1, Number(isEvent ? args[2] : args[1]) || 1);
-      return sendListPage(api, threadID, isEvent ? "goat-event" : "goat-command", page, 10);
+      return sendListPage(api, threadID, senderID, isEvent ? "goat-event" : "goat-command", page, 10);
     }
 
     if (sub === "event") {
@@ -631,7 +632,7 @@ module.exports = {
         );
       }
 
-      await sendSearchPage(api, threadID, query, 1);
+      await sendSearchPage(api, threadID, senderID, query, 1);
     } catch (_) { return api.sendMessage("❌ Search API error.", threadID); }
   }
 };
