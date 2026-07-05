@@ -1,4 +1,6 @@
-const mom moment = require("moment-timezone");
+📄 | Source code of "autotimer.js":
+
+const moment = require("moment-timezone");
 const axios = require("axios");
 const fs = require("fs-extra");
 const path = require("path");
@@ -82,7 +84,7 @@ ${text}
 ◥◣━━━━━━━━━━━━━━━━◢◤
 📅>ᴅᴀᴛᴇ: ${todayDate}
 ━━━━━━━━━━━━━━━━━━━━
-𝙱𝙾𝚃 𝙾𝚆𝙽𝙴𝚁:-𝙰𝙺𝙰𝚂𝙷-𝙲𝙷𝙾𝚆𝙳𝙷𝚄𝚁𝚈
+𝙱𝙾𝚃 𝙾𝚆𝙽𝙴𝚁:𝙰𝙺𝙰𝚂𝙷 𝙲𝙷𝙾𝚆𝙳𝙷𝚄𝚁𝚈
 ━━━━━━━━━━━━━━━━━━━━`;
 
     try {
