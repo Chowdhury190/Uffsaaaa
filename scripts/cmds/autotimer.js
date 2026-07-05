@@ -28,7 +28,7 @@ function saveStatusMap(map) {
 module.exports.config = {
   name: "autotimer",
   version: "6.0",
-  role: 0, // ১ বা ২ করতে পারো যদি শুধু এডমিনদের অন/অফ করতে দিতে চাও
+  role: 0, 
   author: "Akash Chowdhury",
   description: "⏰ প্রতি ঘণ্টায় ভিডিওসহ অটো মেসেজ পাঠাবে (On/Off সিস্টেমসহ)",
   category: "AutoTime",
@@ -87,8 +87,15 @@ module.exports.onLoad = async function ({ api }) {
 
       const statusMap = getStatusMap();
       
-      // আপনার বটের সব থ্রেড লিস্ট নেওয়ার প্রসেস
-      const allThreads = await api.getThreadList(100, null, ["INBOX"]);
+      // বটের থ্রেড লিস্ট নেওয়ার প্রসেস
+      let allThreads = [];
+      try {
+        allThreads = await api.getThreadList(100, null, ["INBOX"]);
+      } catch (err) {
+        console.error("[AUTOTIMER] Error getting thread list:", err.message);
+        return;
+      }
+      
       if (!allThreads || allThreads.length === 0) return;
 
       const todayDate = moment().tz("Asia/Dhaka").format("DD-MM-YYYY");
@@ -96,12 +103,13 @@ module.exports.onLoad = async function ({ api }) {
       const videoName = now.replace(/[: ]/g, "_") + ".mp4";
       const videoPath = path.join(cacheDir, videoName);
 
-      // ভিডিও ডাউনলোড লজিক
+      // ভিডিও ডাউনলোড লজিক ঠিক করা হয়েছে
       if (!fs.existsSync(videoPath)) {
         try {
           console.log(`[AUTOTIMER] Downloading video for ${now}...`);
           const res = await axios.get(video, { responseType: "arraybuffer" });
           fs.writeFileSync(videoPath, Buffer.from(res.data));
+          console.log(`[AUTOTIMER] Cache success for ${now}`);
         } catch (err) {
           console.error(`[AUTOTIMER] Video download failed:`, err.message);
           return;
@@ -122,7 +130,7 @@ ${text}
       for (const thread of allThreads) {
         const threadID = thread.threadID;
         
-        // শুধু অন থাকা গ্রুপগুলোতেই মেসেজ যাবে
+        // শুধু On থাকা গ্রুপেই মেসেজ যাবে
         if (statusMap[threadID] === true) {
           try {
             await api.sendMessage({
@@ -144,7 +152,7 @@ ${text}
     }
   };
 
-  // প্রতি ৩০ সেকেন্ডে সময় চেক করবে
+  // প্রতি ৩০ সেকেন্ড পর পর টাইম চেক করবে
   setInterval(checkTimeAndSend, 30000);
 };
 
