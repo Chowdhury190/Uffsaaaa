@@ -30,7 +30,7 @@ module.exports.config = {
   version: "6.5",
   role: 0, 
   author: "Akash Chowdhury",
-  description: "⏰ প্রতি ঘণ্টায় ভিডিওসহ অটো মেসেজ পাঠাবে (On/Off সিস্টেমসহ)",
+  description: "⏰ প্রতি ঘণ্টায় ভিডিওসহ অটো মেসেজ পাঠাবে (On/Offシステムসহ)",
   category: "AutoTime",
   countDown: 3,
 };
@@ -63,7 +63,7 @@ module.exports.onLoad = async function ({ api }) {
     "05:00 PM": { text: "⌚┆এখন বিকাল ৫টা বাজে❥︎একতু বিশ্রাম নাও,🙂↕️🌆", video: "https://files.catbox.moe/dv3qv4.mp4" },
     "06:00 PM": { text: "⌚┆এখন সন্ধ্যা ৬টা বাজে❥︎পরিবারকে সময় দাও,😍🌇", video: "https://files.catbox.moe/au2yk5.mp4" },
     "07:00 PM": { text: "⌚┆এখন সন্ধ্যা ৭টা বাজে❥︎এশার নামাজ পড়ো,❤️🌃", video: "https://files.catbox.moe/4v4uyv.mp4" },
-    "08:00 PM": { text: "⌚┆এখন রাত ৮টা বাজে❥︎আজকের কাজ শেষ করো,🧖🙂↔️", video: "https://files.catbox.moe/ltspa4.mp4" },
+    "08:00 PM": { text: "⌚┆এখন রাত ৮টা বাজে❥︎আজকের কাজ শেষ করো,🧖🙂↕️", video: "https://files.catbox.moe/ltspa4.mp4" },
     "09:00 PM": { text: "⌚┆এখন রাত ৯টা বাজে❥︎ঘুমের প্রস্তুতি নাও,😴🌙", video: "https://files.catbox.moe/sxs5io.mp4" },
     "10:00 PM": { text: "⌚┆এখন রাত ১০টা বাজে❥︎ঘুমাতে যাও, স্বপ্নে দেখা হবে,😴🙂↕️", video: "https://files.catbox.moe/0e4s7h.mp4" },
     "11:00 PM": { text: "⌚┆এখন রাত ১১টা বাজে❥︎ভালোবাসা রইলো,🥰🌌", video: "https://files.catbox.moe/ndbhtu.mp4" }
@@ -96,82 +96,77 @@ module.exports.onLoad = async function ({ api }) {
       
       if (!allThreads || allThreads.length === 0) return;
 
-      const todayDate = moment().tz("Asia/Dhaka").format("DD-MM-YYYY");
+      // গ্রুপ ফিল্টার করা (শুধু গ্রুপ চ্যাটগুলো নেওয়া হবে)
+      const groupThreads = allThreads.filter(thread => thread.isGroup && thread.isSubscribed);
+      if (groupThreads.length === 0) return;
+
+      global.__sentMap[currentMinute] = true;
+
       const { text, video } = timerData[now];
-      const videoName = now.replace(/[: ]/g, "_") + ".mp4";
-      const videoPath = path.join(cacheDir, videoName);
+      const tempVideoPath = path.join(cacheDir, `autotimer_${Date.now()}.mp4`);
 
-      if (!fs.existsSync(videoPath)) {
-        try {
-          console.log(`[AUTOTIMER] Downloading video for ${now}...`);
-          const res = await axios.get(video, { responseType: "arraybuffer" });
-          fs.writeFileSync(videoPath, Buffer.from(res.data));
-        } catch (err) {
-          console.error(`[AUTOTIMER] Video download failed:`, err.message);
-          return;
-        }
+      // ভিডিও ডাউনলোড করা
+      try {
+        const response = await axios.get(video, { responseType: "arraybuffer", timeout: 20000 });
+        await fs.writeFile(tempVideoPath, response.data);
+      } catch (downloadErr) {
+        console.error("[AUTOTIMER] Video download failed:", downloadErr.message);
+        return;
       }
 
-      const msg = `◢◤━━━━━━━━━━━━━━━━◥◣
-🕒>ᴛɪᴍᴇ: ${now}
-${text}
-◥◣━━━━━━━━━━━━━━━━◢◤
-📅>ᴅᴀᴛᴇ: ${todayDate}
-━━━━━━━━━━━━━━━━━━━━
-𝙱𝙾𝚃 𝙾𝚆𝙽𝙴𝚁:- ${module.exports.config.author}
-━━━━━━━━━━━━━━━━━━━━`;
-
-      let sentToAny = false;
-
-      for (const thread of allThreads) {
+      // লুপ চালিয়ে সব গ্রুপে মেসেজ পাঠানো
+      for (const thread of groupThreads) {
         const threadID = thread.threadID;
-        
-        if (statusMap[threadID] === true) {
-          try {
-            await api.sendMessage({
-              body: msg,
-              attachment: fs.createReadStream(videoPath)
-            }, threadID);
-            sentToAny = true;
-          } catch (e) {
-            console.error(`[AUTOTIMER] Failed sending to ${threadID}:`, e.message);
+
+        // যদি কোনো গ্রুপে ম্যানুয়ালি অফ (False) করে রাখা হয়, তবে সেখানে যাবে না
+        if (statusMap[threadID] === false) continue;
+
+        api.sendMessage(
+          {
+            body: text,
+            attachment: fs.createReadStream(tempVideoPath)
+          },
+          threadID,
+          (err) => {
+            if (err) console.error(`[AUTOTIMER] Failed to send to ${threadID}:`, err.message);
           }
-        }
+        );
       }
 
-      if (sentToAny) {
-        global.__sentMap[currentMinute] = true;
-      }
+      // ফাইল ব্যবহারের পর ডিলিট করার জন্য একটু সময় দেওয়া
+      setTimeout(() => {
+        fs.remove(tempVideoPath).catch(e => console.error("[AUTOTIMER] Cleanup error:", e.message));
+      }, 15000);
+
     } catch (err) {
-      console.error("[AUTOTIMER] Interval loop error:", err.message);
+      console.error("[AUTOTIMER] Main interval error:", err.message);
     }
   };
 
+  // প্রতি ৩০ সেকেন্ড পর পর টাইম চেক করবে
   setInterval(checkTimeAndSend, 30000);
 };
 
-// এখানে run এর জায়গায় onStart ব্যবহার করা হয়েছে এররটি ফিক্স করার জন্য
+// অন/অফ কমান্ড কন্ট্রোল করার জন্য onStart ফাংশন
 module.exports.onStart = async function ({ api, event, args }) {
-  const { threadID, messageID } = event;
+  const threadID = event.threadID;
   const statusMap = getStatusMap();
 
   if (!args[0]) {
-    return api.sendMessage("⚠️ দয়া করে 'on' অথবা 'off' লিখুন।\nযেমন: /autotimer on", threadID, messageID);
+    return api.sendMessage("⏰ autotimer ব্যবহার করতে লিখুন: autotimer on অথবা autotimer off", threadID, event.messageID);
   }
 
-  const action = args[0].toLowerCase();
+  const mode = args[0].toLowerCase();
 
-  if (action === "on") {
+  if (mode === "on") {
     statusMap[threadID] = true;
     saveStatusMap(statusMap);
-    return api.sendMessage("✅ এই গ্রুপে প্রতি ঘণ্টার অটো-টাইমার মেসেজ চালু করা হয়েছে।", threadID, messageID);
-  } 
-  else if (action === "off") {
+    return api.sendMessage("✅ এই গ্রুপে প্রতি ঘণ্টার অটোমেটিক মেসেজ অন করা হয়েছে।", threadID, event.messageID);
+  } else if (mode === "off") {
     statusMap[threadID] = false;
     saveStatusMap(statusMap);
-    return api.sendMessage("❌ এই গ্রুপে প্রতি ঘণ্টার অটো-টাইমার মেসেজ বন্ধ করা হয়েছে।", threadID, messageID);
-  } 
-  else {
-    return api.sendMessage("⚠️ ভুল কমান্ড! শুধু 'on' অথবা 'off' ব্যবহার করুন।", threadID, messageID);
+    return api.sendMessage("❌ এই গ্রুপে প্রতি ঘণ্টার অটোমেটিক মেসেজ অফ করা হয়েছে।", threadID, event.messageID);
+  } else {
+    return api.sendMessage("⚠️ ভুল কমান্ড! দয়া করে 'on' অথবা 'off' লিখুন।", threadID, event.messageID);
   }
 };
