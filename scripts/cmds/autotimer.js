@@ -65,8 +65,8 @@ module.exports.onLoad = async function ({ api }) {
     "07:00 PM": { text: "এখন সন্ধ্যা ৭টা বাজে❥︎এশার নামাজ পড়ো,❤️🌃", video: "https://files.catbox.moe/4v4uyv.mp4" },
     "08:00 PM": { text: "এখন রাত ৮টা বাজে❥︎আজকের কাজ শেষ করো,🧖🙂↕️", video: "https://files.catbox.moe/ltspa4.mp4" },
     "09:00 PM": { text: "এখন রাত ৯টা বাজে❥︎ঘুমের প্রস্তুতি নাও,😴🌙", video: "https://files.catbox.moe/sxs5io.mp4" },
-    "10:00 PM": { text: "এখন রাত ১০টা বাজে❥︎ঘুমাতে যাও, স্বপ্নে দেখা হবে,😴🙂↕️", video: "https://files.catbox.moe/0e4s7h.mp4" },
-    "11:00 PM": { text: "এখন রাত ১১টা বাজে❥︎ভালোবাসা রইলো,🥰🌌", video: "https://files.catbox.moe/ndbhtu.mp4" }
+    "10:00 PM": { text: "🌙 ঘুমানোর আগে আয়াতুল কুরসি ও ঘুমের দোয়া পড়ে নিন।\n😴 তারপর মোবাইলটাকেও ছুটি দিন! 😂", video: "https://files.catbox.moe/0e4s7h.mp4" },
+    "11:00 PM": { text: "📱 আর কত স্ক্রল করবি?\nFacebook শেষ হবে না, কিন্তু তোর ঘুম শেষ হয়ে যাবে! 🤣", video: "https://files.catbox.moe/ndbhtu.mp4" }
   };
 
   const cacheDir = path.join(__dirname, "cache");
