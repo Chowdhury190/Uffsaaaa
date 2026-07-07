@@ -3,7 +3,12 @@ const axios = require("axios");
 const fs = require("fs-extra");
 const path = require("path");
 
-const configPath = path.join(__dirname, "cache", "autotimer_config.json");
+const cacheDir = path.join(__dirname, "cache");
+const configPath = path.join(cacheDir, "autotimer_config.json");
+
+if (!fs.existsSync(cacheDir)) {
+  fs.ensureDirSync(cacheDir);
+}
 
 function getStatusMap() {
   try {
@@ -26,12 +31,13 @@ function saveStatusMap(map) {
 
 module.exports.config = {
   name: "autotimer",
-  version: "9.5",
+  version: "10.5",
   role: 0,
   author: "Akash Chowdhury",
   description: "⏰ ঢাকা সময় অনুযায়ী কাস্টম ডিজাইন ও ভিডিও সহ অটো মেসেজ পাঠাবে।",
   category: "AutoTime",
   countDown: 3,
+  hasPermssion: 0
 };
 
 // On/Off কমান্ড
@@ -43,7 +49,7 @@ module.exports.onStart = async function({ api, event, args }) {
   if (args[0] === "on") {
     statusMap[key] = true;
     saveStatusMap(statusMap);
-    return api.sendMessage("⏰ [AUTOTIMER] चालू হলো! এখন থেকে প্রতি ঘণ্টার ০৫ মিনিটে মেসেজ যাবে।", threadID);
+    return api.sendMessage("⏰ [AUTOTIMER] चालू হলো! এখন থেকে প্রতি ঘণ্টার ০৫ মিনিটে মেসেজ যাবে।\n👤 Owner: Akash Chowdhury", threadID);
   }
 
   if (args[0] === "off") {
@@ -55,15 +61,17 @@ module.exports.onStart = async function({ api, event, args }) {
   return api.sendMessage("ব্যবহার করতে লিখুন: autotimer on অথবা autotimer off", threadID);
 };
 
+// ব্যাকগ্রাউন্ড লুপ
 module.exports.onLoad = async function ({ api }) {
   if (module.exports.config.author !== "Akash Chowdhury") {
     console.error("❌ Author name has been changed!");
     return process.exit(1);
   }
 
+  console.log("[AUTOTIMER] সফলভাবে লোড হয়েছে এবং ব্যাকগ্রাউন্ডে টাইম চেক করছে...");
+
   const timeZone = "Asia/Dhaka";
   
-  // প্রতি ঘণ্টার মেসেজ ও ভিডিওর ডাটাবেজ
   const timerData = {
     "12:00 AM": { text: "রাত ১২টা বাজে! দিন শেষ, রাত শুরু। এখনও চ্যাট করছিস? ঘুমা জলদি! 😂", video: "https://files.catbox.moe/8btwbx.mp4" },
     "01:00 AM": { text: "রাত ১টা! এই সময়ে যারা জেগে থাকে তারা নির্ঘাত প্রেমে পড়েছে নয়তো ছ্যাঁকা খেয়েছে! 🤣", video: "https://files.catbox.moe/9iq1ki.mp4" },
@@ -78,11 +86,11 @@ module.exports.onLoad = async function ({ api }) {
     "10:00 AM": { text: "সকাল ১০টা! ক্লাসের ফাঁকে বন্ধুদের সাথে টিফিন ভাগ করে খাওয়ার মজাই আলাদা। 🍎", video: "https://files.catbox.moe/q2vg9i.mp4" },
     "11:00 AM": { text: "সকাল ১১টা! রোদের তাতিয়ে উঠছে। college ফাঁকি দিয়ে মামার দোকানে আড্ডা দিচ্ছো না তো? 🧐", video: "https://files.catbox.moe/zzm2xo.mp4" },
     "12:00 PM": { text: "দুপুর ১২টা! যোহরের আযান হতে চললো। ক্লাসের ক্লান্তি শেষে নামাজের প্রস্তুতি নাও। ❤️", video: "https://files.catbox.moe/g8d1av.mp4" },
-    "01:00 PM": { text: "দুপুর ১টা! স্কুল-কলেজ ছুটি বা দুপুরের খাবার খাওয়ার পারফেক্ট সময়। পেট পুজো করো! 🍛", video: "https://files.catbox.moe/ypt7au.mp4" },
+    "01:00 PM": { text: "দুপুর ১টা! স্কুল-কলেজ ছুটি বা দুপুরের খাবার খাওয়ার পারфেক্ট সময়। পেট পুজো করো! 🍛", video: "https://files.catbox.moe/ypt7au.mp4" },
     "02:00 PM": { text: "দুপুর ২টা! এই টাইমে ভাত খাওয়ার পর যে ঘুমটা আসে, ওটা অমৃত! 💤", video: "https://files.catbox.moe/nstu8b.mp4" },
     "03:00 PM": { text: "বিকাল ৩টা! অলসতা ঝেড়ে আবার একটু পড়াশোনায় মন দাও অথবা একটু রিল্যাক্স করো। 🔥", video: "https://files.catbox.moe/xmrujv.mp4" },
     "04:00 PM": { text: "আসরের সময় (বিকাল ৪টা)। পবিত্র হয়ে আল্লাহর দরবারে হাজিরা দিন। 🌻", video: "https://files.catbox.moe/jndni6.mp4" },
-    "05:00 PM": { text: "বিকাল ৫টা! পড়ন্ত বিকেল। বন্ধুদের সাথে মাঠে গিয়ে একটু ফুটবল বা আড্ডা দেওয়ার সময়। ⚽", video: "https://files.catbox.moe/dv3qv4.mp4" },
+    "05:00 PM": { text: "বিকাল ৫টা! পড়ন্ত বিকেল। বন্ধুদের সাথে মাঠে গিয়ে একটু ফুটবল বা আড্ডা দেওয়ার সময়। ⚽", video: "https://files.catbox.moe/dv3qv4.mp4" },
     "06:00 PM": { text: "মাগরিবের আযান (সন্ধ্যা ৬টা)। আড্ডা বন্ধ করে জলদি ঘরে ফেরো এবং নামাজ পড়ো। 🕌", video: "https://files.catbox.moe/au2yk5.mp4" },
     "07:00 PM": { text: "সন্ধ্যা ৭টা বাজে! এশার নামাজ পড়ো অথবা পড়তে বসো। অলসতা করো না। ❤️🌃", video: "https://files.catbox.moe/au2yk5.mp4" },
     "08:00 PM": { text: "রাত ৮টা! ফেসবুক স্ক্রল করা বন্ধ করে একটু বই খাতা খুলে বসো তো দেখি! 📚", video: "https://files.catbox.moe/tb5xef.mp4" },
@@ -93,58 +101,60 @@ module.exports.onLoad = async function ({ api }) {
 
   let lastSentHour = -1;
 
-  // প্রতি ১ মিনিটে চেক করবে সময় হয়েছে কিনা
   setInterval(async () => {
     const now = moment().tz(timeZone);
     const currentHour = now.hour();
     const currentMinute = now.minute();
 
-    // প্রতি ঘণ্টার ০৫ মিনিটে মেসেজ যাবে (এবং এক ঘণ্টায় যেন একবারই যায়)
     if (currentMinute === 5 && currentHour !== lastSentHour) {
-      lastSentHour = currentHour;
+      
+      const statusMap = getStatusMap();
+      const activeThreads = Object.keys(statusMap).filter(id => statusMap[id] === true);
+      
+      if (activeThreads.length === 0) return;
 
-      // timerData এর কী (Key) ফরম্যাট অনুযায়ী রূপান্তর (যেমন: 01:00 AM)
+      lastSentHour = currentHour;
       const targetTimeStr = now.clone().minute(0).format("hh:00 A");
       const matchedData = timerData[targetTimeStr];
 
       if (!matchedData) return;
 
-      const statusMap = getStatusMap();
-      
-      // যেসব গ্রুপে 'on' করা আছে, শুধু সেগুলোতে মেসেজ পাঠাবে
-      for (const threadID of Object.keys(statusMap)) {
-        if (statusMap[threadID] === true) {
-          try {
-            const videoPath = path.join(__dirname, "cache", `temp_timer_${threadID}.mp4`);
-            const response = await axios({
-              method: "get",
-              url: matchedData.video,
-              responseType: "stream"
+      // মেসেজের নিচে ওনারের নাম যোগ করা হলো
+      const finalMessage = `${matchedData.text}\n\n👤 Owner: Akash Chowdhury`;
+
+      for (const threadID of activeThreads) {
+        try {
+          const videoPath = path.join(cacheDir, `temp_${threadID}_${Date.now()}.mp4`);
+          
+          const response = await axios({
+            method: "get",
+            url: matchedData.video,
+            responseType: "stream"
+          });
+
+          const writer = fs.createWriteStream(videoPath);
+          response.data.pipe(writer);
+
+          writer.on("finish", () => {
+            api.sendMessage({
+              body: finalMessage,
+              attachment: fs.createReadStream(videoPath)
+            }, threadID, (err) => {
+              if (err) console.error(`[AUTOTIMER] Send error to ${threadID}:`, err);
+              if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath); 
             });
+          });
 
-            const writer = fs.createWriteStream(videoPath);
-            response.data.pipe(writer);
+          writer.on("error", (err) => {
+            console.error("[AUTOTIMER] File write error:", err);
+            api.sendMessage(finalMessage, threadID); 
+          });
 
-            writer.on("finish", () => {
-              api.sendMessage({
-                body: matchedData.text,
-                attachment: fs.createReadStream(videoPath)
-              }, threadID, () => {
-                fs.unlinkSync(videoPath); // পাঠানোর পর ফাইল ডিলিট
-              });
-            });
-
-            writer.on("error", (err) => {
-              console.error("[AUTOTIMER] File write error:", err);
-            });
-
-          } catch (error) {
-            console.error(`[AUTOTIMER] Error sending to ${threadID}:`, error);
-            // ভিডিও ডাউনলোড ফেইল করলে শুধু টেক্সট পাঠাবে
-            api.sendMessage(matchedData.text, threadID);
-          }
+        } catch (error) {
+          console.error(`[AUTOTIMER] Request error for ${threadID}:`, error.message);
+          api.sendMessage(finalMessage, threadID);
         }
       }
     }
-  }, 60000); // প্রতি ৬০ সেকেন্ডে চেক
+  }, 30000); 
 };
