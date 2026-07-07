@@ -26,7 +26,7 @@ function saveStatusMap(map) {
 
 module.exports.config = {
   name: "autotimer",
-  version: "9.0",
+  version: "9.5",
   role: 0,
   author: "Akash Chowdhury",
   description: "⏰ ঢাকা সময় অনুযায়ী কাস্টম ডিজাইন ও ভিডিও সহ অটো মেসেজ পাঠাবে।",
@@ -43,7 +43,7 @@ module.exports.onStart = async function({ api, event, args }) {
   if (args[0] === "on") {
     statusMap[key] = true;
     saveStatusMap(statusMap);
-    return api.sendMessage("⏰ [AUTOTIMER] চালু হলো! এখন থেকে প্রতি ঘণ্টায় মেসেজ যাবে।", threadID);
+    return api.sendMessage("⏰ [AUTOTIMER] चालू হলো! এখন থেকে প্রতি ঘণ্টার ০৫ মিনিটে মেসেজ যাবে।", threadID);
   }
 
   if (args[0] === "off") {
@@ -74,9 +74,9 @@ module.exports.onLoad = async function ({ api }) {
     "06:00 AM": { text: "শুভ সকাল! সকাল ৬টা বাজে। অলসতা ছেড়ে সুন্দর একটা দিন শুরু করো! 💪", video: "https://files.catbox.moe/q9rf0f.mp4" },
     "07:00 AM": { text: "সকাল ৭টা! ঘুম থেকে উঠে হাত-মুখ ধুয়ে নাস্তা খেয়ে নাও জলদি। ☕", video: "https://files.catbox.moe/ztnm6a.mp4" },
     "08:00 AM": { text: "সকাল ৮টা! স্কুল-কলেজ আর কোচিংয়ে যাওয়ার সময় হয়ে গেছে, ব্যাগ গোছাও! 🎒", video: "https://files.catbox.moe/tb5xef.mp4" },
-    "09:00 AM": { text: "সকাল ৯টা! ক্লাসে স্যার ঢোকার আগে জলদি বেঞ্চে গিয়ে বসো, নাইলে খ খবর আছে! 📖", video: "https://files.catbox.moe/2mi5oo.mp4" },
+    "09:00 AM": { text: "সকাল ৯টা! ক্লাসে স্যার ঢোকার আগে জলদি বেঞ্চে গিয়ে বসো, নাইলে খবর আছে! 📖", video: "https://files.catbox.moe/2mi5oo.mp4" },
     "10:00 AM": { text: "সকাল ১০টা! ক্লাসের ফাঁকে বন্ধুদের সাথে টিফিন ভাগ করে খাওয়ার মজাই আলাদা। 🍎", video: "https://files.catbox.moe/q2vg9i.mp4" },
-    "11:00 AM": { text: "সকাল ১১টা! রোদের তাতিয়ে উঠছে। কলেজ ফাঁকি দিয়ে মামার দোকানে আড্ডা দিচ্ছো না তো? 🧐", video: "https://files.catbox.moe/zzm2xo.mp4" },
+    "11:00 AM": { text: "সকাল ১১টা! রোদের তাতিয়ে উঠছে। college ফাঁকি দিয়ে মামার দোকানে আড্ডা দিচ্ছো না তো? 🧐", video: "https://files.catbox.moe/zzm2xo.mp4" },
     "12:00 PM": { text: "দুপুর ১২টা! যোহরের আযান হতে চললো। ক্লাসের ক্লান্তি শেষে নামাজের প্রস্তুতি নাও। ❤️", video: "https://files.catbox.moe/g8d1av.mp4" },
     "01:00 PM": { text: "দুপুর ১টা! স্কুল-কলেজ ছুটি বা দুপুরের খাবার খাওয়ার পারফেক্ট সময়। পেট পুজো করো! 🍛", video: "https://files.catbox.moe/ypt7au.mp4" },
     "02:00 PM": { text: "দুপুর ২টা! এই টাইমে ভাত খাওয়ার পর যে ঘুমটা আসে, ওটা অমৃত! 💤", video: "https://files.catbox.moe/nstu8b.mp4" },
@@ -91,10 +91,10 @@ module.exports.onLoad = async function ({ api }) {
     "11:00 PM": { text: "রাত ১১টা! গভীর রাত হতে চললো। যারা এখনও জেগে আছো, তারা চোখ বন্ধ করো। 🌙", video: "https://files.catbox.moe/8btwbx.mp4" }
   };
 
+  // প্রতি ১ মিনিটে চেক করবে
   setInterval(async () => {
     const currentMinute = moment().tz(timeZone).format("mm");
-    // প্রতি ঘণ্টার ঠিক ০৫ মিনিটে মেসেজটি ট্রিগার হবে যেন কোনো মেসেজ মিস না হয়
-    if (currentMinute !== "05") return;
+    if (currentMinute !== "05") return; // ঠিক ০৫ মিনিটে ট্রিগার হবে
 
     const currentTimeStr = moment().tz(timeZone).format("hh:00 A");
     const currentDateStr = moment().tz(timeZone).format("DD-MM-YYYY");
@@ -102,43 +102,56 @@ module.exports.onLoad = async function ({ api }) {
     if (timerData[currentTimeStr]) {
       const { text, video } = timerData[currentTimeStr];
       const statusMap = getStatusMap();
-      
-      // আপনার দেওয়া চমৎকার ডিজাইন ফরম্যাট
-      const msg = `◢◤━━━━━━━━━━━━━━━━◥◣\n🕒>ᴛɪᴍᴇ: ${currentTimeStr}\n⌚┆${text}\n◥◣━━━━━━━━━━━━━━━━◢◤\n📅>ᴅᴀᴛᴇ: ${currentDateStr}\n━━━━━━━━━━━━━━━━━━━━\n𝙱𝙾𝚃 𝙾𝚆𝙽𝙴𝚁:- Akash Chowdhury\n━━━━━━━━━━━━━━━━━━━━`;
-
       const activeThreads = Object.keys(statusMap).filter(key => statusMap[key] === true);
 
-      for (const threadID of activeThreads) {
-        try {
-          const videoPath = path.join(__dirname, "cache", `autotimer_${currentTimeStr.replace(/:| /g, "_")}.mp4`);
-          const response = await axios({
-            method: "GET",
-            url: video,
-            responseType: "stream"
-          });
+      if (activeThreads.length === 0) return;
 
-          const writer = fs.createWriteStream(videoPath);
-          response.data.pipe(writer);
+      const msg = `◢◤━━━━━━━━━━━━━━━━◥◣\n🕒>ᴛɪᴍᴇ: ${currentTimeStr}\n⌚┆${text}\n◥◣━━━━━━━━━━━━━━━━◢◤\n📅>ᴅᴀᴛᴇ: ${currentDateStr}\n━━━━━━━━━━━━━━━━━━━━\n𝙱𝙾𝚃 𝙾𝚆𝙽𝙴𝚁:- Akash Chowdhury\n━━━━━━━━━━━━━━━━━━━━`;
+      
+      const videoPath = path.join(__dirname, "cache", `autotimer_${currentTimeStr.replace(/:| /g, "_")}.mp4`);
 
-          writer.on("finish", () => {
+      try {
+        // ভিডিও একবারই ডাউনলোড হবে সবার জন্য
+        const response = await axios({
+          method: "GET",
+          url: video,
+          responseType: "stream"
+        });
+
+        const writer = fs.createWriteStream(videoPath);
+        response.data.pipe(writer);
+
+        writer.on("finish", () => {
+          let sendCount = 0;
+          
+          activeThreads.forEach(threadID => {
             api.sendMessage({
               body: msg,
               attachment: fs.createReadStream(videoPath)
-            }, threadID, () => {
-              fs.unlinkSync(videoPath);
+            }, threadID, (err) => {
+              if (err) console.error(`[AUTOTIMER] Error sending to ${threadID}:`, err);
+              
+              sendCount++;
+              // সব গ্রুপে পাঠানো শেষ হলে নিরাপদভাবে ৫ সেকেন্ড পর ফাইল ডিলিট করবে
+              if (sendCount === activeThreads.length) {
+                setTimeout(() => {
+                  if (fs.existsSync(videoPath)) fs.unlinkSync(videoPath);
+                }, 5000);
+              }
             });
           });
+        });
 
-          writer.on("error", (err) => {
-            console.error("[AUTOTIMER] Video download error:", err);
-            api.sendMessage(msg, threadID);
-          });
+        writer.on("error", (err) => {
+          console.error("[AUTOTIMER] Stream writing error:", err);
+          activeThreads.forEach(id => api.sendMessage(msg, id));
+        });
 
-        } catch (error) {
-          console.error(`[AUTOTIMER] Error sending to thread ${threadID}:`, error);
-          api.sendMessage(msg, threadID);
-        }
+      } catch (error) {
+        console.error(`[AUTOTIMER] Network Error:`, error);
+        // ডাউনলোড ফেইল হলে শুধু টেক্সট মেসেজ পাঠাবে
+        activeThreads.forEach(id => api.sendMessage(msg, id));
       }
     }
-  }, 60000); // প্রতি ১ মিনিটে চেক করবে
+  }, 60000);
 };
